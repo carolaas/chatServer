@@ -4,6 +4,9 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -13,15 +16,8 @@ import java.util.concurrent.Executors;
 public class Server {
 
     private ServerSocket bindSocket;
-    private ExecutorService cachedPool;
-    private ArrayList<Socket> arrayList;
+    private List<ServerWorker> workers = Collections.synchronizedList(new ArrayList<ServerWorker>());
 
-    public Server() {
-
-        cachedPool = Executors.newCachedThreadPool();
-        arrayList = new ArrayList<>();
-
-    }
 
     public static void main(String[] args) {
 
@@ -36,19 +32,23 @@ public class Server {
 
         PrintWriter out;
 
-        for (int i = 0; i < arrayList.size() ; i++) {
+        synchronized (workers) {
 
-            try {
+            Iterator<ServerWorker> it = workers.iterator();
 
-                out = new PrintWriter(arrayList.get(i).getOutputStream());
-                out.print(message + "\n");
-                out.flush();
+            while (it.hasNext()) {
 
-            } catch (IOException e) {
+                try {
 
-                e.printStackTrace();
+                    out = new PrintWriter(it.next().getClientSocket().getOutputStream());
+                    out.print(message + "\n");
+                    out.flush();
+
+                } catch (IOException e) {
+
+                    e.printStackTrace();
+                }
             }
-
         }
     }
 
@@ -74,9 +74,13 @@ public class Server {
 
                 Socket clientSocket = bindSocket.accept(); // accept method returns a Socket
 
-                cachedPool.submit(new ClientHandler(clientSocket));
+                ServerWorker serverWorker = new ServerWorker(clientSocket);
 
-                arrayList.add(clientSocket);
+                workers.add(serverWorker);
+
+                Thread thread = new Thread(serverWorker);
+                thread.start();
+
 
             } catch (IOException e) {
 
@@ -85,15 +89,19 @@ public class Server {
         }
     }
 
-    private class ClientHandler implements Runnable {
+    private class ServerWorker implements Runnable {
 
         private Socket clientSocket;
         private String messageReceived = "";
         private BufferedReader in;
 
-        public ClientHandler(Socket clientSocket) {
+        public ServerWorker(Socket clientSocket) {
 
             this.clientSocket = clientSocket;
+        }
+
+        public Socket getClientSocket() {
+            return clientSocket;
         }
 
         public void receiveMessage() {
@@ -103,14 +111,24 @@ public class Server {
 
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-            while (!messageReceived.equals("quit")) {
+            while (!clientSocket.isClosed()) {
 
                 messageReceived = in.readLine();
                 System.out.println("Client " + Thread.currentThread().getId() + " : " + messageReceived);
-                broadCast("Client " + Thread.currentThread().getId() + " : " + messageReceived);
+
+                if(messageReceived == null || messageReceived.equals("quit")) {
+
+                    in.close();
+                    clientSocket.close();
+                    continue;
+
+                } else {
+
+                    broadCast("Client " + Thread.currentThread().getId() + " : " + messageReceived);
+                }
 
             }
-            clientSocket.close();
+            workers.remove(this);
 
             } catch (IOException e) {
 

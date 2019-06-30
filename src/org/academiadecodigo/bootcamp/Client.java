@@ -13,10 +13,9 @@ public class Client {
 
     private String host = "";
     private int portNum = 8382;
-    //private String message = "";
     private BufferedReader bReader;
     private Socket clientSocket;
-    BufferedReader in;
+    private BufferedReader in;
 
     public Client() {
 
@@ -58,19 +57,27 @@ public class Client {
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             String messageReceived = "";
 
-            while (!messageReceived.equals("null")) {
+            while (!clientSocket.isClosed()) {
 
                 messageReceived = in.readLine();
-                System.out.println(messageReceived);
 
+                if(messageReceived != null) {
+
+                    System.out.println(messageReceived);
+
+                } else {
+
+                    System.out.println("Connection closed.");
+                    in.close();
+                    clientSocket.close();
+                }
             }
-            in.close();
 
         } catch (IOException e) {
 
             e.printStackTrace();
         }
-
+        System.exit(0);
     }
 
     private class SendManager implements Runnable {
@@ -100,13 +107,6 @@ public class Client {
                     e.printStackTrace();
                 }
 
-               /* if (messageToSend == null || messageToSend.equals("quit")) {
-
-                    break;
-                }
-
-                */
-
                 out.write(messageToSend);
                 out.newLine();
                 out.flush();
@@ -122,18 +122,18 @@ public class Client {
                     out.close();
                     clientSocket.close();
 
+
             } catch (IOException e) {
 
                     System.out.println("Error closing socket");
                 }
-}
+    }
         } catch (IOException e) {
 
             e.printStackTrace();
         }
 
         }
-
     }
 }
 
