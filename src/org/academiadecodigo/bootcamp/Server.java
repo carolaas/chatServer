@@ -17,6 +17,7 @@ public class Server {
 
     private ServerSocket bindSocket;
     private List<ServerWorker> workers = Collections.synchronizedList(new ArrayList<ServerWorker>());
+    private int workerNum = 0;
 
 
     public static void main(String[] args) {
@@ -76,9 +77,14 @@ public class Server {
 
                 ServerWorker serverWorker = new ServerWorker(clientSocket);
 
+                workerNum++;
+
+                String name = "Client " + workerNum;
+
                 workers.add(serverWorker);
 
-                Thread thread = new Thread(serverWorker);
+                Thread thread = new Thread(serverWorker, name);
+                thread.setName(name);
                 thread.start();
 
 
@@ -114,7 +120,7 @@ public class Server {
             while (!clientSocket.isClosed()) {
 
                 messageReceived = in.readLine();
-                System.out.println("Client " + Thread.currentThread().getId() + " : " + messageReceived);
+                System.out.println(Thread.currentThread().getName() + ": " + messageReceived);
 
                 if(messageReceived == null || messageReceived.equals("quit")) {
 
@@ -124,7 +130,7 @@ public class Server {
 
                 } else {
 
-                    broadCast("Client " + Thread.currentThread().getId() + " : " + messageReceived);
+                    broadCast(Thread.currentThread().getName() + ": " + messageReceived);
                 }
 
             }
