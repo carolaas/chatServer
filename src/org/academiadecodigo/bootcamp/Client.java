@@ -1,11 +1,6 @@
 package org.academiadecodigo.bootcamp;
 
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
@@ -18,15 +13,15 @@ public class Client {
 
     private String host = "";
     private int portNum = 8382;
-    private String message = "";
+    //private String message = "";
     private BufferedReader bReader;
     private Socket clientSocket;
-    private ExecutorService singleExecutor;
+    BufferedReader in;
 
     public Client() {
 
         bReader = new BufferedReader(new InputStreamReader(System.in));
-        singleExecutor = Executors.newSingleThreadExecutor();
+
     }
 
     public static void main(String[] args) {
@@ -38,13 +33,15 @@ public class Client {
 
     public void connect() {
 
+
         try {
-            System.out.println("Wich host?");
+            System.out.println("Which host?");
             host = bReader.readLine();
             InetAddress ia = InetAddress.getByName(host);
             clientSocket = new Socket(InetAddress.getLocalHost(), portNum);
-            singleExecutor.submit(new ReadWrite());
-            System.out.println("Write a message");
+            Thread thread = new Thread(new SendManager());
+            thread.start();
+            readMessage();
 
         } catch (IOException e) {
 
@@ -52,64 +49,91 @@ public class Client {
         }
     }
 
-    private class ReadWrite implements Runnable {
+    private void readMessage () {
 
-        BufferedReader in;
-        PrintWriter out;
 
-        private void readMessage () {
+        try {
 
-            try {
 
-                System.out.println("here");
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            String messageReceived = "";
 
-                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                out = new PrintWriter(clientSocket.getOutputStream(), true);
+            while (!messageReceived.equals("null")) {
 
-                while (!message.equals("null")) {
+                messageReceived = in.readLine();
+                System.out.println(messageReceived);
 
-                    message = in.readLine();
-                    System.out.println(message);
-
-                }
-                in.close();
-
-            } catch (IOException e) {
-
-                e.printStackTrace();
             }
+            in.close();
 
+        } catch (IOException e) {
+
+            e.printStackTrace();
         }
 
-    private void sendMessage() {
-
-            try {
-
-
-            while (true) {
-
-
-                message = bReader.readLine();
-                System.out.println("send");
-                System.out.println(message);
-                out.print(message);
-                out.flush();
-            }
-
-
-            } catch (IOException e) {
-
-                e.printStackTrace();
-            }
-
     }
+
+    private class SendManager implements Runnable {
 
         @Override
         public void run() {
 
-            sendMessage();
-            readMessage();
+        try {
+
+
+            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+            BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+            System.out.println("Write a message");
+
+            String messageToSend = "";
+
+            while (!clientSocket.isClosed()) {
+
+
+                try {
+
+                    messageToSend = in.readLine();
+
+
+                } catch (IOException e) {
+
+                    e.printStackTrace();
+                }
+
+               /* if (messageToSend == null || messageToSend.equals("quit")) {
+
+                    break;
+                }
+
+                */
+
+                out.write(messageToSend);
+                out.newLine();
+                out.flush();
+
+            }
+
+            if(messageToSend.equals("quit")) {
+
+
+                try {
+
+                    in.close();
+                    out.close();
+                    clientSocket.close();
+
+            } catch (IOException e) {
+
+                    System.out.println("Error closing socket");
+                }
+}
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        }
 
         }
+
     }
 }
+

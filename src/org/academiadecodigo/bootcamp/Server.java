@@ -41,7 +41,7 @@ public class Server {
             try {
 
                 out = new PrintWriter(arrayList.get(i).getOutputStream());
-                out.print("Client " + i + " " + message + "\n");
+                out.print(message + "\n");
                 out.flush();
 
             } catch (IOException e) {
@@ -90,7 +90,6 @@ public class Server {
         private Socket clientSocket;
         private String messageReceived = "";
         private BufferedReader in;
-        private PrintWriter out;
 
         public ClientHandler(Socket clientSocket) {
 
@@ -107,8 +106,8 @@ public class Server {
             while (!messageReceived.equals("quit")) {
 
                 messageReceived = in.readLine();
-                System.out.println(messageReceived);
-                broadCast(messageReceived);
+                System.out.println("Client " + Thread.currentThread().getId() + " : " + messageReceived);
+                broadCast("Client " + Thread.currentThread().getId() + " : " + messageReceived);
 
             }
             clientSocket.close();
