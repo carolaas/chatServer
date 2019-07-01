@@ -29,6 +29,20 @@ public class Server {
 
     }
 
+    private void reply(ServerWorker serverWorker, String message) {
+
+        try {
+
+        PrintWriter out = new PrintWriter(serverWorker.getClientSocket().getOutputStream());
+        out.print(message);
+        out.flush();
+
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        }
+    }
+
     private void replyAll(String message) {
 
         PrintWriter out;
@@ -173,11 +187,20 @@ public class Server {
                 }  else if (messageReceived.equals("/list")) {
 
                     System.out.println(list());
-                    broadCast("List of clients: " + "\n" + list());
+                    reply(this, "List of clients: " + "\n" + list());
+
+                } else if (messageReceived.equals("/kick " + name)) {
+
+                    System.out.println(name);
+                    broadCast(name + " was kicked!");
+                    in.close();
+                    clientSocket.close();
+                    continue;
+
 
                 } else {
 
-                    broadCast(Thread.currentThread().getName() + ": " + messageReceived);
+                    broadCast(name + ": " + messageReceived);
                 }
 
             }
