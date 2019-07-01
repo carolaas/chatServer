@@ -16,6 +16,7 @@ public class Client {
     private BufferedReader bReader;
     private Socket clientSocket;
     private BufferedReader in;
+    private String name;
 
     public Client() {
 

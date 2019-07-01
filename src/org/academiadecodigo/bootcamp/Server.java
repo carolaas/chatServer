@@ -75,11 +75,11 @@ public class Server {
 
                 Socket clientSocket = bindSocket.accept(); // accept method returns a Socket
 
-                ServerWorker serverWorker = new ServerWorker(clientSocket);
+                String name = "Client " + workerNum;
+                ServerWorker serverWorker = new ServerWorker(clientSocket, name);
 
                 workerNum++;
 
-                String name = "Client " + workerNum;
 
                 workers.add(serverWorker);
 
@@ -100,14 +100,22 @@ public class Server {
         private Socket clientSocket;
         private String messageReceived = "";
         private BufferedReader in;
+        private String name;
 
-        public ServerWorker(Socket clientSocket) {
+
+        public ServerWorker(Socket clientSocket, String name) {
 
             this.clientSocket = clientSocket;
+            this.name = name;
         }
 
         public Socket getClientSocket() {
             return clientSocket;
+        }
+
+        public void setName(String name) {
+
+            Thread.currentThread().setName(name);
         }
 
         public void receiveMessage() {
@@ -122,11 +130,21 @@ public class Server {
                 messageReceived = in.readLine();
                 System.out.println(Thread.currentThread().getName() + ": " + messageReceived);
 
-                if(messageReceived == null || messageReceived.equals("quit")) {
+                if(messageReceived == null || messageReceived.equals("/quit")) {
 
                     in.close();
                     clientSocket.close();
                     continue;
+
+                } else if (messageReceived.equals("/alias")) {
+
+                    name = in.readLine();
+
+                    System.out.println(name);
+
+                    setName(name);
+                    continue;
+
 
                 } else {
 
