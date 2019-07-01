@@ -53,6 +53,26 @@ public class Server {
         }
     }
 
+    private String list() {
+
+        StringBuilder list = new StringBuilder();
+
+        synchronized (workers) {
+
+
+            Iterator<ServerWorker> it = workers.iterator();
+
+            while (it.hasNext()) {
+
+                list.append("\t");
+                list.append(it.next().getName());
+                list.append("\n");
+
+            }
+        }
+            return list.toString();
+    }
+
     private void listen(int portNum) {
 
         try {
@@ -113,9 +133,14 @@ public class Server {
             return clientSocket;
         }
 
+        public String getName() {
+
+            return name;
+        }
+
         public void setName(String name) {
 
-            Thread.currentThread().setName(name);
+           Thread.currentThread().setName(name);
         }
 
         public void receiveMessage() {
@@ -145,6 +170,10 @@ public class Server {
                     setName(name);
                     continue;
 
+                }  else if (messageReceived.equals("/list")) {
+
+                    System.out.println(list());
+                    broadCast("List of clients: " + "\n" + list());
 
                 } else {
 
@@ -173,5 +202,4 @@ public class Server {
             receiveMessage();
         }
     }
-
 }
