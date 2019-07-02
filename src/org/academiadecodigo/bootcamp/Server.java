@@ -16,7 +16,7 @@ import java.util.concurrent.Executors;
 public class Server {
 
     private ServerSocket bindSocket;
-    private List<ServerWorker> workers = Collections.synchronizedList(new ArrayList<ServerWorker>());
+    private List<ServerWorker> workers = Collections.synchronizedList(new ArrayList<ServerWorker>()); // we have to use a thread safe container
     private int workerNum = 0;
 
 
@@ -188,14 +188,6 @@ public class Server {
 
                     System.out.println(list());
                     reply(this, "List of clients: " + "\n" + list());
-
-                } else if (messageReceived.equals("/kick " + name)) {
-
-                    System.out.println(name);
-                    broadCast(name + " was kicked!");
-                    in.close();
-                    clientSocket.close();
-                    continue;
 
 
                 } else {
